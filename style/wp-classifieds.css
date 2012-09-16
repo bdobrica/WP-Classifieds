@@ -1,0 +1,5 @@
+.wp-classifieds-shadow { position: absolute; top: 0; left: 0; width: 0; height: 0; z-index: 10000; background: #000; }
+.wp-classifieds-window { position: absolute; width: 640px; height: 480px; border-radius: 3px; background: #fff; margin-left: -320px; left: 50%; top: 10%; z-index: 10001; display: none; }
+.wp-classifieds-window-close { float: right; margin: 5px; }
+.wp-classifieds-window-title {}
+.wp-classifieds-window-content { margin: 5px; clear: both; }

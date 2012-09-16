@@ -1,4 +1,5 @@
 <?php
+define ('WP_CLS_URL', WP_PLUGIN_URL . '/' . basename(dirname(dirname(__FILE__))));
 define ('WP_CLS_DB_PREFIX', 'cls_');
 define ('WP_CLS_UPLOAD_PATH', dirname(dirname(__FILE__)) . '/attachments');
 
@@ -77,14 +78,17 @@ class WP_CLS_Ad {
 				stamp int not null default 0 comment \'unix time stamp of this ad\',
 				content text not null comment \'the content of this ad\',
 				attachments text not null comment \'the serialized array of attachments\',
-				likes int not null default 0 \'number of likes\',
-				dislikes int not null default 0 \'number of dislikes\',
-				priority int not null default 0 \'priority of this ad\',
-				flags int not null default 0 \'flags field. usually &1 = off/on\');');
+				likes int not null default 0 comment \'number of likes\',
+				dislikes int not null default 0 comment \'number of dislikes\',
+				priority int not null default 0 comment \'priority of this ad\',
+				flags int not null default 0 comment \'flags field. usually &1 = off/on\');');
 			}
 		else {
 			$wpdb->query ('drop table `' . $this->table .'`;');
 			}
+		}
+
+	public function __destruct () {
 		}
 	}
 
@@ -155,7 +159,7 @@ class WP_CLS_Attachment {
 	public function init ($flag = TRUE) {
 		global $wpdb;
 		if ($flag) {
-			if (!@mkdir ($this->path, 0777, TRUE)) die ('WP_CLS::FatalError::error( Unable to create '.$this->path.'! )');
+			#if (!@mkdir ($this->path, 0777, TRUE)) die ('WP_CLS::FatalError::error( Unable to create '.$this->path.'! )');
 			$wpdb->query ('create table `' . $this->table . '` (
 				id int not null primary key auto_increment comment \'the primary key\',
 				hash varchar(32) not null default \'\' unique comment \'the md5sum of the file. preventing duplicates!\',
@@ -168,6 +172,9 @@ class WP_CLS_Attachment {
 			/* should do something to remove the directory.. neah.. not yet.. */
 			$wpdb->query ('drop table `' . $this->table . '`;');
 			}
+		}
+
+	public function __destruct () {
 		}
 	}
 
@@ -183,6 +190,8 @@ class WP_CLS_Group {
 		$this->table = $wpdb->prefix . WP_CLS_DB_PREFIX . 'groups';
 		$this->tlink = $wpdb->prefix . WP_CLS_DB_PREFIX . 'ad_group';
 		$this->keys = array (
+			'name',
+			'flags'
 			);
 		if (is_numeric($data)) {
 			$sql = $wpdb->prepare ('select * from where id=%d;', (int) $data);
@@ -237,7 +246,6 @@ class WP_CLS_Group {
 		if ($flag) {
 			$wpdb->query ('create table `' . $this->table . '` (
 				id int not null primary key auto_increment comment \'the primary key\',
-				pid int not null default 0 comment \'the parent group id\',
 				name text not null comment \'the group name\',
 				flags int not null default 0 comment \'binary flags. usually &1 = off/on\');');
 			$wpdb->query ('create table `' . $this->tlink . '` (
@@ -253,73 +261,31 @@ class WP_CLS_Group {
 			$wpdb->query ('drop table `' . $this->tlink . '`;');
 			}
 		}
+
+	public function __destruct () {
+		}
 	}
 
 class WP_CLS_User {
 	private $ID;
-	private $keys;
-	private $data;
 
 	public function __construct ($data = null) {
-		global $wpdb;
-		$this->keys = array (
-			);
-		if (is_numeric($data)) {
-			$sql = $wpdb->prepare ('select * from where id=%d;', (int) $data);
-			$data = $wpdb->get_row ($sql, ARRAY_A);
-			$this->ID = (int) $this->data['id'];
-			}
-		if (is_array($data)) {
-			foreach ($this->keys as $key)
-				$this->data[$key] = $data[$key];
-			}
 		}
 
 	public function get ($key = '', $value = '') {
-		global $wpdb;
-		if (in_array($key, $this->keys)) return $this->data[$key];
-		return $this->ID;
 		}
 
 	public function set ($key = '', $value = '') {
-		global $wpdb;
-		if (is_array ($key)) {
-			$update = array ();
-			foreach ($key as $_k => $_v) {
-				if (!in_array($key, $this->keys)) continue;
-				$update[] = $wpdb->prepare ($_k.'=%s', $_v);
-				$this->data[$_k] = $_v;
-				}
-			if ($this->ID)
-				$wpdb->query ($wpdb->prepare('update set '.implode(',',$update).' where id=%d;', $this->id));
-			}
-		else {
-			if (!in_array($key, $this->keys)) return FALSE;
-			$this->data[$key] = $value;
-			if ($this->ID)
-				$wpdb->query ($wpdb->prepare('update set '.$key.'=%s where id=%d;', $value, $this->id));
-			}
-		return TRUE;
 		}
 
 	public function save () {
-		global $wpdb;
-		if ($this->ID) return FALSE;
-		$sql = $wpdb->prepare ('insert into ('.implode(',', $this->keys).') values ('.str_pad('', count($this->keys)*3 - 1, '%s,').');', array_values($this->data));
-		$wpdb->query ($sql);
-		$this->ID = $wpdb->insert_id;
 		}
 
 	public function init ($flag = TRUE) {
 		global $wpdb;
-		if ($flag) {
-			$wpdb->query ('create table (
-				id int not null primary key auto_increment,
-				);');
-			}
-		else {
-			$wpdb->query ('drop table;');
-			}
+		}
+
+	public function __destruct () {
 		}
 	}
 
@@ -379,15 +345,33 @@ class WP_CLS_List {
 		}
 
 	public function init ($flag = TRUE) {
-		global $wpdb;
-		if ($flag) {
-			$wpdb->query ('create table (
-				id int not null primary key auto_increment,
-				);');
-			}
-		else {
-			$wpdb->query ('drop table;');
-			}
+		}
+	
+	public function __destruct () {
+		}
+	}
+
+class WP_CLS_Ajax {
+	private $out;
+
+	public function __construct () {
+		$this->out = '';
+		}
+
+	public function fire ($action = null, $method = 'get') {
+		}
+
+	public function page ($page = null) {
+		for ($c = 0; $c<25; $c++)
+			$this->out .= '<div style="height: 100px; background: #ccc; margin: 3px;"></div>';
+		}
+
+	public function view ($echo = true) {
+		if (!$echo) return $this->out;
+		echo $this->out;
+		}
+
+	public function __destruct () {
 		}
 	}
 ?>

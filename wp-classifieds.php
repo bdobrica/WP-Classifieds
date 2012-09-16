@@ -1,12 +1,14 @@
 <?php
 /*
-Plugin Name:
-Plugin URI:
-Description:
+Plugin Name: WP Classifieds
+Plugin URI: http://grozavesti.info/
+Description: WP Classifieds Plugin
 Author: Bogdan Dobrica
 Version: 0.1
 Author URI: http://ublo.ro/
 */
+
+include (dirname(__FILE__).'/libs/class.cls.php');
 
 function wp_classifieds () {
 	}
@@ -14,42 +16,9 @@ function wp_classifieds () {
 function wp_classifieds_cookie () {
 	}
 
-/* user actions */
-
-function wp_classifieds_list ($text) {
-	return $text;
-	}
-
-function wp_classifieds_show ($text) {
-	return $text;
-	}
-
-function wp_classifieds_new ($text) {
-	return $text;
-	}
-
-function wp_classifieds_ads ($text) {
-	return $text;
-	}
-
-function wp_classifieds_profile ($text) {
-	return $text;
-	}
-
-function wp_classifieds_inbox ($text) {
-	return $text;
-	}
-
 /* user filter */
 
 function wp_classifieds_filter ($text) {
-	$actions = array ('new');
-	foreach ($actions as $action)
-		if (
-			(strpos('[wp_classifieds_'.$action.']', $text) !== FALSE) &&
-			function_exists('wp_classifieds_' . $action)
-			)
-			return call_user_func('wp_classifieds_' . $action, $text);
 	return $text;
 	}
 
@@ -59,49 +28,10 @@ function wp_classifieds_firstrun () {
 	$objects = array (new WP_CLS_Ad (), new WP_CLS_Attachment (), new WP_CLS_Group (), new WP_CLS_User ());
 	foreach ($objects as $object) $object->init ();
 
-	$pages = array (
-		array (
-			'name' => 'List Ads',
-			'slug' => '[wp_classifieds_list]',
-			),
-		array (
-			'name' => 'Show Ad',
-			'slug' => '[wp_classifieds_show]',
-			),
-		array (
-			'name' => 'New Ad',
-			'slug' => '[wp_classifieds_new]',
-			),
-		array (
-			'name' => 'My Ads',
-			'slug' => '[wp_classifieds_ads]',
-			),
-		array (
-			'name' => 'My Profile',
-			'slug' => '[wp_classifieds_profile]'
-			),
-		array (
-			'name' => 'My Inbox',
-			'slug' => '[wp_classifieds_inbox]',
-			),
-		);
-
-
-	$menu_order = 1;
-	$ids = array ();
-	foreach ($pages as $page) {
-		$ids[] = wp_insert_post ( array (
-			'post_title' => $page['name'],
-			'menu_order' => $menu_order++,
-			'comment_status' => 'closed',
-			'post_content' => $page['slug'],
-			'post_date' => date('Y-m-d H:i:s'),
-			'post_status' => 'publish',
-			'post_type' => 'page',
-			));
-		}
-	/* remember the created pages in a non-auto-loadable option -> last 'no' means no-auto-load */
-	add_option ('wp_classifieds_pages', $ids, '', 'no');
+	add_role ('wp_classified', 'WP Classified', array (
+                'read' => true,
+                'add_classifieds' => true,
+                ));
 	}
 
 function wp_classifieds_lastrun () {
@@ -109,11 +39,7 @@ function wp_classifieds_lastrun () {
 	$objects = array (new WP_CLS_Ad (), new WP_CLS_Attachment (), new WP_CLS_Group (), new WP_CLS_User ());
 	foreach ($objects as $object) $object->init (FALSE);
 
-	/* cleanup: delete pages */
-	$pages = get_option ('wp_classifieds_pages');
-	foreach ($pages as $page) wp_delete_post ($page, true);
-	/* cleanup: delete custom option */
-	delete_option ('wp_classifieds_pages');
+	remove_role ('wp_classified');
 	}
 
 /* admin functions */
@@ -123,8 +49,9 @@ function wp_classifieds_admin () {
 	}
 
 function wp_classifieds_scripts () {
-	wp_enqueue_script ('wp-classifieds', WP_CRM_URL . '/scripts/wp-classifieds.js', array('jquery'), '0.1');
-	wp_enqueue_style  ('wp-classifieds', WP_CRM_URL . '/style/wp-classifieds.css', '0.1');
+	wp_enqueue_script ('wp-classifieds-handlers', WP_CLS_URL . '/scripts/wp-classifieds-handlers.js', array('swfupload', 'swfupload-queue'), '0.1');
+	wp_enqueue_script ('wp-classifieds', WP_CLS_URL . '/scripts/wp-classifieds.js', array('jquery'), '0.1');
+	wp_enqueue_style  ('wp-classifieds', WP_CLS_URL . '/style/wp-classifieds.css', '0.1');
 	}
 
 /* hooks, actions, filter */
@@ -134,7 +61,7 @@ register_deactivation_hook (__FILE__, 'wp_classifieds_lastrun');
 
 add_action ('get_header', 'wp_classifieds_cookie');
 
-add_action ('admin_enqueue_scripts', 'wp_classifieds_scripts');
+add_action ('wp_enqueue_scripts', 'wp_classifieds_scripts');
 add_action ('admin_menu', 'wp_classifieds_admin');
 
 add_filter ('the_content', 'wp_classifieds_filter');
