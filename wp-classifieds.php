@@ -9,6 +9,7 @@ Author URI: http://ublo.ro/
 */
 
 include (dirname(__FILE__).'/libs/class.cls.php');
+load_plugin_textdomain (WP_CLS_NAME, false, dirname(plugin_basename( __FILE__ )).'/languages/');
 
 function wp_classifieds () {
 	}
@@ -49,8 +50,10 @@ function wp_classifieds_admin () {
 	}
 
 function wp_classifieds_scripts () {
-	wp_enqueue_script ('wp-classifieds-handlers', WP_CLS_URL . '/scripts/wp-classifieds-handlers.js', array('swfupload', 'swfupload-queue'), '0.1');
-	wp_enqueue_script ('wp-classifieds', WP_CLS_URL . '/scripts/wp-classifieds.js', array('jquery'), '0.1');
+	wp_enqueue_script ('fileprogress', WP_CLS_URL . '/scripts/fileprogress.js', array('jquery', 'swfupload', 'swfupload-queue'), '0.1');
+	wp_enqueue_script ('underscore', WP_CLS_URL . '/scripts/underscore-min.js', array(), '1.3.3');
+	wp_enqueue_script ('wp-classifieds-handlers', WP_CLS_URL . '/scripts/wp-classifieds-handlers.js', array(), '0.1');
+	wp_enqueue_script ('wp-classifieds', WP_CLS_URL . '/scripts/wp-classifieds.js', array(), '0.1');
 	wp_enqueue_style  ('wp-classifieds', WP_CLS_URL . '/style/wp-classifieds.css', '0.1');
 	}
 
